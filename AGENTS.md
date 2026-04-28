@@ -67,10 +67,20 @@ Run from this directory:
 
 ```bash
 pnpm install
+pnpm lint
+pnpm format:check
 pnpm typecheck
 pnpm test:unit
 pnpm build
 ```
+
+Before committing, run:
+
+```bash
+pnpm precommit
+```
+
+`pnpm check` runs lint, format check, typecheck, and unit tests.
 
 Useful integration commands:
 
@@ -121,7 +131,33 @@ LARK_A2UI_LISTEN_CALLBACKS=0
 LARK_A2UI_MATRIX_FILTER=deployment pnpm test:integration:lark
 ```
 
+Useful fixture and callback options:
+
+```env
+LARK_A2UI_FIXTURE=form-submit
+LARK_A2UI_SURFACE_ID=request_form
+LARK_A2UI_PRINT_CARD_JSON=1
+LARK_A2UI_LISTEN_CALLBACKS=1
+LARK_A2UI_CALLBACK_TIMEOUT_MS=180000
+LARK_A2UI_CALLBACK_OUTPUT=.tmp/lark-callback-result.json
+A2UI_INTEGRATION_ENV_FILE=.env.integration
+```
+
 Network access to `open.feishu.cn` may need to run outside the sandbox.
+
+## Runtime Flow
+
+```text
+LLM or host emits A2UI v0.8 messages
+  -> SurfaceStore applies messages to a surface
+  -> renderSurface compiles the surface to Lark Card JSON
+  -> host app sends or updates the card
+  -> user interacts with the card
+  -> host app receives Lark card.action.trigger
+  -> extractLarkCallback produces NormalizedCallbackInput
+  -> normalizeCallback returns A2UI userAction
+  -> host app routes userAction to business logic or an LLM
+```
 
 ## Official Feishu/Lark Docs
 
