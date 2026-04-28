@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:a2ui:lark-card:v0_8:normalized-callback-input",
+  "title": "A2UI Lark Card Normalized Callback Input",
+  "description": "Platform-extracted callback input consumed by the semantic callback normalizer.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "envelope": {
+      "$ref": "callback-envelope.schema.json"
+    },
+    "submittedValues": {
+      "type": "object",
+      "description": "Field values extracted from the Feishu/Lark callback. Keys are A2UI field names.",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          { "type": "null" }
+        ]
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "operator": {
+      "type": "object",
+      "description": "Optional host-controlled operator metadata. The core contract does not define identity semantics.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["envelope"],
+  "allOf": [
+    {
+      "if": {
+        "not": {
+          "required": ["submittedValues"]
+        }
+      },
+      "then": {
+        "properties": {
+          "submittedValues": {
+            "default": {}
+          }
+        }
+      }
+    }
+  ]
+}

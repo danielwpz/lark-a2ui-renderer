@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:a2ui:lark-card:v0_8:callback-envelope",
+  "title": "A2UI Lark Card Callback Envelope",
+  "description": "Renderer-owned metadata embedded in Feishu/Lark interactive controls.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "__a2ui_lark": {
+      "const": "v0_8"
+    },
+    "surfaceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceComponentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actionName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stateless callback action name. Must match the source Button action.name."
+    },
+    "actionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque stateful callback binding id. The host resolves this to an action binding."
+    }
+  },
+  "required": ["__a2ui_lark", "surfaceId", "sourceComponentId"],
+  "oneOf": [
+    {
+      "required": ["actionName"],
+      "not": {
+        "required": ["actionId"]
+      }
+    },
+    {
+      "required": ["actionId"],
+      "not": {
+        "required": ["actionName"]
+      }
+    }
+  ]
+}

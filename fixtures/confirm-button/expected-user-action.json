@@ -1,0 +1,11 @@
+{
+  "userAction": {
+    "name": "confirm",
+    "surfaceId": "confirm_order",
+    "sourceComponentId": "confirm_button",
+    "timestamp": "2026-04-28T12:00:00.000Z",
+    "context": {
+      "confirmed": true
+    }
+  }
+}

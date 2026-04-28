@@ -1,0 +1,13 @@
+{
+  "envelope": {
+    "__a2ui_lark": "v0_8",
+    "surfaceId": "request_form",
+    "sourceComponentId": "submit_button",
+    "actionName": "submit_form"
+  },
+  "submittedValues": {
+    "reason": "Looks good",
+    "priority": "high"
+  },
+  "timestamp": "2026-04-28T12:05:00.000Z"
+}

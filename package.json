@@ -1,0 +1,48 @@
+{
+  "name": "lark-a2ui-renderer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.15.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./v0_8": {
+      "types": "./dist/v0_8/index.d.ts",
+      "import": "./dist/v0_8/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "lint": "biome lint .",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run test/unit",
+    "test:unit": "vitest run test/unit",
+    "test:integration:llm": "vitest run test/integration/llm-generation.test.ts",
+    "test:integration:lark": "vitest run test/integration/lark.interactive.test.ts",
+    "precommit": "pnpm lint && pnpm format:check && pnpm test:unit",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:unit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@larksuiteoapi/node-sdk": "^1.60.0"
+  },
+  "peerDependenciesMeta": {
+    "@larksuiteoapi/node-sdk": {
+      "optional": true
+    }
+  }
+}

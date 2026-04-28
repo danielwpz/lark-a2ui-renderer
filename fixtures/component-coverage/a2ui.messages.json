@@ -1,0 +1,322 @@
+[
+  {
+    "dataModelUpdate": {
+      "surfaceId": "component_coverage",
+      "path": "/",
+      "contents": [
+        {
+          "key": "ticket",
+          "valueMap": [
+            {
+              "key": "id",
+              "valueString": "DEPLOY-42"
+            }
+          ]
+        },
+        {
+          "key": "form",
+          "valueMap": [
+            {
+              "key": "reason",
+              "valueString": ""
+            },
+            {
+              "key": "priority",
+              "valueMap": [
+                {
+                  "key": "0",
+                  "valueString": "normal"
+                }
+              ]
+            },
+            {
+              "key": "dueDate",
+              "valueString": "2026-05-01"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "surfaceUpdate": {
+      "surfaceId": "component_coverage",
+      "components": [
+        {
+          "id": "root",
+          "component": {
+            "Column": {
+              "children": {
+                "explicitList": [
+                  "title",
+                  "description",
+                  "section_divider",
+                  "review_form",
+                  "actions_divider",
+                  "secondary_actions"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "title",
+          "component": {
+            "Text": {
+              "text": {
+                "literalString": "Deployment review"
+              },
+              "usageHint": "h2"
+            }
+          }
+        },
+        {
+          "id": "description",
+          "component": {
+            "Text": {
+              "text": {
+                "literalString": "Review deployment DEPLOY-42 and submit a decision."
+              },
+              "usageHint": "body"
+            }
+          }
+        },
+        {
+          "id": "section_divider",
+          "component": {
+            "Divider": {
+              "axis": "horizontal"
+            }
+          }
+        },
+        {
+          "id": "review_form",
+          "component": {
+            "Form": {
+              "children": {
+                "explicitList": ["reason_field", "priority_field", "due_date_field"]
+              },
+              "submit": "submit_button"
+            }
+          }
+        },
+        {
+          "id": "reason_field",
+          "component": {
+            "TextField": {
+              "name": "reason",
+              "label": {
+                "literalString": "Reason"
+              },
+              "text": {
+                "path": "/form/reason"
+              },
+              "placeholder": {
+                "literalString": "Summarize the review decision"
+              },
+              "textFieldType": "longText",
+              "required": true,
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "id": "priority_field",
+          "component": {
+            "MultipleChoice": {
+              "name": "priority",
+              "label": {
+                "literalString": "Priority"
+              },
+              "selections": {
+                "path": "/form/priority"
+              },
+              "options": [
+                {
+                  "label": {
+                    "literalString": "Normal"
+                  },
+                  "value": "normal"
+                },
+                {
+                  "label": {
+                    "literalString": "High"
+                  },
+                  "value": "high"
+                },
+                {
+                  "label": {
+                    "literalString": "Urgent"
+                  },
+                  "value": "urgent"
+                }
+              ],
+              "maxAllowedSelections": 1,
+              "variant": "select",
+              "required": true
+            }
+          }
+        },
+        {
+          "id": "due_date_field",
+          "component": {
+            "DateTimeInput": {
+              "name": "due_date",
+              "label": {
+                "literalString": "Target date"
+              },
+              "value": {
+                "path": "/form/dueDate"
+              },
+              "enableDate": true,
+              "enableTime": false,
+              "required": true
+            }
+          }
+        },
+        {
+          "id": "submit_label",
+          "component": {
+            "Text": {
+              "text": {
+                "literalString": "Submit review"
+              }
+            }
+          }
+        },
+        {
+          "id": "submit_button",
+          "component": {
+            "Button": {
+              "child": "submit_label",
+              "primary": true,
+              "action": {
+                "name": "submit_review",
+                "context": [
+                  {
+                    "key": "reason",
+                    "value": {
+                      "path": "/form/reason"
+                    }
+                  },
+                  {
+                    "key": "priority",
+                    "value": {
+                      "path": "/form/priority"
+                    }
+                  },
+                  {
+                    "key": "dueDate",
+                    "value": {
+                      "path": "/form/dueDate"
+                    }
+                  },
+                  {
+                    "key": "ticketId",
+                    "value": {
+                      "path": "/ticket/id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "actions_divider",
+          "component": {
+            "Divider": {
+              "axis": "horizontal"
+            }
+          }
+        },
+        {
+          "id": "secondary_actions",
+          "component": {
+            "Row": {
+              "children": {
+                "explicitList": ["cancel_button", "escalate_button"]
+              },
+              "distribution": "end"
+            }
+          }
+        },
+        {
+          "id": "cancel_label",
+          "component": {
+            "Text": {
+              "text": {
+                "literalString": "Cancel"
+              }
+            }
+          }
+        },
+        {
+          "id": "cancel_button",
+          "component": {
+            "Button": {
+              "child": "cancel_label",
+              "danger": true,
+              "action": {
+                "name": "cancel_review",
+                "context": [
+                  {
+                    "key": "cancelled",
+                    "value": {
+                      "literalBoolean": true
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "escalate_label",
+          "component": {
+            "Text": {
+              "text": {
+                "literalString": "Escalate"
+              }
+            }
+          }
+        },
+        {
+          "id": "escalate_button",
+          "component": {
+            "Button": {
+              "child": "escalate_label",
+              "action": {
+                "name": "escalate_review",
+                "context": [
+                  {
+                    "key": "escalate",
+                    "value": {
+                      "literalBoolean": true
+                    }
+                  },
+                  {
+                    "key": "ticketId",
+                    "value": {
+                      "path": "/ticket/id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "beginRendering": {
+      "surfaceId": "component_coverage",
+      "catalogId": "urn:a2ui:catalog:lark-card:v0_8",
+      "root": "root",
+      "styles": {
+        "summary": "Deployment review"
+      }
+    }
+  }
+]

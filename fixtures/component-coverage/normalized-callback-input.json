@@ -1,0 +1,14 @@
+{
+  "envelope": {
+    "__a2ui_lark": "v0_8",
+    "surfaceId": "component_coverage",
+    "sourceComponentId": "submit_button",
+    "actionName": "submit_review"
+  },
+  "submittedValues": {
+    "reason": "Ready after QA",
+    "priority": "high",
+    "due_date": "2026-05-07"
+  },
+  "timestamp": "2026-04-28T12:00:00.000Z"
+}

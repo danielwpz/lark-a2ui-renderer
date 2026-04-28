@@ -1,0 +1,401 @@
+{
+  "catalogId": "urn:a2ui:catalog:lark-card:v0_8",
+  "components": {
+    "Text": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "object",
+          "description": "Text content to display. Use literalString for fixed text or path for data-model text. Simple Markdown is allowed; HTML is not.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "usageHint": {
+          "type": "string",
+          "description": "A hint for the text style.",
+          "enum": ["h1", "h2", "h3", "h4", "h5", "caption", "body"]
+        }
+      },
+      "required": ["text"]
+    },
+    "Column": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "type": "object",
+          "description": "Static list of child component ids. Dynamic templates are intentionally out of scope for the first Lark card catalog.",
+          "additionalProperties": false,
+          "properties": {
+            "explicitList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["explicitList"]
+        },
+        "distribution": {
+          "type": "string",
+          "description": "Vertical arrangement hint.",
+          "enum": ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly"]
+        },
+        "alignment": {
+          "type": "string",
+          "description": "Horizontal alignment hint.",
+          "enum": ["center", "end", "start", "stretch"]
+        }
+      },
+      "required": ["children"]
+    },
+    "Row": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "type": "object",
+          "description": "Static list of child component ids.",
+          "additionalProperties": false,
+          "properties": {
+            "explicitList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["explicitList"]
+        },
+        "distribution": {
+          "type": "string",
+          "description": "Horizontal arrangement hint.",
+          "enum": ["center", "end", "spaceAround", "spaceBetween", "spaceEvenly", "start"]
+        },
+        "alignment": {
+          "type": "string",
+          "description": "Vertical alignment hint.",
+          "enum": ["start", "center", "end", "stretch"]
+        }
+      },
+      "required": ["children"]
+    },
+    "Divider": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "type": "string",
+          "description": "The divider orientation. Lark cards only render horizontal dividers in the first version.",
+          "enum": ["horizontal"]
+        }
+      }
+    },
+    "Button": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "child": {
+          "type": "string",
+          "description": "The id of a Text component used as the button label."
+        },
+        "primary": {
+          "type": "boolean",
+          "description": "Render as the primary action."
+        },
+        "danger": {
+          "type": "boolean",
+          "description": "Render as a destructive action."
+        },
+        "action": {
+          "type": "object",
+          "description": "Client-side action dispatched when the button is clicked or used as a form submit button.",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "context": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "object",
+                    "description": "Value included in the callback context. Use path for data-model values or literal* for fixed values.",
+                    "additionalProperties": false,
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "literalString": {
+                        "type": "string"
+                      },
+                      "literalNumber": {
+                        "type": "number"
+                      },
+                      "literalBoolean": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "required": ["key", "value"]
+              }
+            }
+          },
+          "required": ["name"]
+        }
+      },
+      "required": ["child", "action"]
+    },
+    "Form": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "type": "object",
+          "description": "Static list of form field component ids.",
+          "additionalProperties": false,
+          "properties": {
+            "explicitList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["explicitList"]
+        },
+        "submit": {
+          "type": "string",
+          "description": "The id of a Button component used as the form submit control."
+        }
+      },
+      "required": ["children", "submit"]
+    },
+    "TextField": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Stable field name returned in form submit callbacks."
+        },
+        "label": {
+          "type": "object",
+          "description": "Input label.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "text": {
+          "type": "object",
+          "description": "Initial or bound input value.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "placeholder": {
+          "type": "object",
+          "description": "Placeholder text.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "textFieldType": {
+          "type": "string",
+          "description": "The type of input field to display.",
+          "enum": ["shortText", "longText", "number", "obscured", "email"]
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether the field must be supplied on submit."
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "description": "Maximum submitted character count."
+        },
+        "validationRegexp": {
+          "type": "string",
+          "description": "Regular expression used by the host or renderer for validation."
+        }
+      },
+      "required": ["name", "label"]
+    },
+    "MultipleChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Stable field name returned in form submit callbacks."
+        },
+        "label": {
+          "type": "object",
+          "description": "Label for the option group.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "selections": {
+          "type": "object",
+          "description": "Selected option values. Use path for form-bound values.",
+          "additionalProperties": false,
+          "properties": {
+            "literalArray": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "options": {
+          "type": "array",
+          "description": "Available options.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "object",
+                "description": "Display label.",
+                "additionalProperties": false,
+                "properties": {
+                  "literalString": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                }
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": ["label", "value"]
+          }
+        },
+        "maxAllowedSelections": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Use 1 for mutually exclusive selection."
+        },
+        "variant": {
+          "type": "string",
+          "description": "Display style hint.",
+          "enum": ["checkbox", "chips", "select"]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "selections", "options"]
+    },
+    "DateTimeInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Stable field name returned in form submit callbacks."
+        },
+        "label": {
+          "type": "object",
+          "description": "Input label.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "value": {
+          "type": "object",
+          "description": "Selected date/time value in ISO 8601 format.",
+          "additionalProperties": false,
+          "properties": {
+            "literalString": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            }
+          }
+        },
+        "enableDate": {
+          "type": "boolean"
+        },
+        "enableTime": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "value"]
+    }
+  },
+  "styles": {
+    "primaryColor": {
+      "type": "string",
+      "description": "Primary UI color as a hexadecimal code.",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "headerTemplate": {
+      "type": "string",
+      "description": "Preferred Lark card header template.",
+      "enum": ["blue", "turquoise", "green", "yellow", "orange", "red", "purple", "grey"]
+    },
+    "summary": {
+      "type": "string",
+      "description": "Fallback card summary text."
+    }
+  }
+}

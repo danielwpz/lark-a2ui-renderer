@@ -1,0 +1,14 @@
+{
+  "userAction": {
+    "name": "submit_review",
+    "surfaceId": "component_coverage",
+    "sourceComponentId": "submit_button",
+    "timestamp": "2026-04-28T12:00:00.000Z",
+    "context": {
+      "reason": "Ready after QA",
+      "priority": ["high"],
+      "dueDate": "2026-05-07",
+      "ticketId": "DEPLOY-42"
+    }
+  }
+}
