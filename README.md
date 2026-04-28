@@ -50,8 +50,11 @@ const userAction = normalizeCallback(store.getSurface("request_form"), normalize
 
 This is still an experimental package. The core renderer, callback normalizer,
 semantic fixtures, LLM generation tests, and real Lark card-send matrix are in
-place, but the catalog and platform mapping may change as more real callback and
-rendering behavior is verified.
+place. The repository also includes a distributable agent skill for authoring
+and validating this A2UI subset.
+
+The catalog and platform mapping may change as more real callback and rendering
+behavior is verified.
 
 Development notes, integration setup, and agent-specific operating guidance live
 in [AGENTS.md](AGENTS.md).

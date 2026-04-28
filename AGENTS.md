@@ -57,6 +57,10 @@ Current target:
 - `catalogs/lark-card/v0_8/catalog.json`: Current supported A2UI catalog subset.
 - `docs/llm-authoring.md`: Instruction sheet for LLM JSON generation tests.
 - `fixtures/`: Stable semantic fixtures.
+- `skills/`: Distributable agent skill for authoring and validating this A2UI
+  subset. It must stay usable without the full source repository.
+- `scripts/sync-skill-runtime.js`: Copies compiled v0.8 runtime files into
+  `skills/runtime/v0_8` for standalone skill distribution.
 - `test/support/lark-case-matrix.ts`: Shared generated case matrix for offline
   and real Lark integration tests.
 - `.env.integration.example`: Template for real LLM/Lark integration settings.
@@ -80,7 +84,15 @@ Before committing, run:
 pnpm precommit
 ```
 
-`pnpm check` runs lint, format check, typecheck, and unit tests.
+`pnpm check` runs lint, format check, build, and unit tests.
+
+`pnpm build` also refreshes the standalone skill runtime under
+`skills/runtime/`. If `src/v0_8` changes, run `pnpm build` and commit the
+updated runtime files with the source changes.
+
+The skill body should remain user-facing and generic. Put protocol details and
+examples under `skills/references/`; put repository maintenance notes here in
+`AGENTS.md`, not in `skills/SKILL.md`.
 
 Useful integration commands:
 

@@ -17,19 +17,22 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/sync-skill-runtime.js",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "hooks:install": "git config core.hooksPath .githooks",
     "lint": "biome lint .",
     "prepare": "git config core.hooksPath .githooks || true",
+    "skills:check-runtime": "git diff --exit-code -- skills/runtime && test -z \"$(git ls-files --others --exclude-standard skills/runtime)\"",
+    "skills:sync-runtime": "node scripts/sync-skill-runtime.js",
+    "validate:a2ui": "node skills/scripts/validate-a2ui.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run test/unit",
     "test:unit": "vitest run test/unit",
     "test:integration:llm": "vitest run test/integration/llm-generation.test.ts",
     "test:integration:lark": "vitest run test/integration/lark.interactive.test.ts",
-    "precommit": "pnpm lint && pnpm format:check && pnpm test:unit",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:unit"
+    "precommit": "pnpm lint && pnpm format:check && pnpm test:unit && pnpm build",
+    "check": "pnpm lint && pnpm format:check && pnpm build && pnpm test:unit"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",
