@@ -1,8 +1,9 @@
 # Dynamic Data Sources Extension
 
-This document describes an experimental extension on top of A2UI v0.8. It is
-not part of the official A2UI v0.8 protocol and must be advertised as a custom
-extension by any renderer or host that supports it.
+This document describes an experimental extension on top of
+[A2UI](https://a2ui.org/) v0.8. It is not part of the official A2UI v0.8
+protocol and must be advertised as a custom extension by any renderer or host
+that supports it.
 
 The purpose is not to define a pixel clock. The purpose is to let an A2UI
 surface declare where changing data comes from, while keeping components and

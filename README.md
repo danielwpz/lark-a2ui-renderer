@@ -1,12 +1,16 @@
 # lark-a2ui-renderer
 
 `lark-a2ui-renderer` is an experimental renderer for turning a constrained
-A2UI v0.8 surface into Feishu/Lark Card JSON 2.0.
+[A2UI](https://a2ui.org/) v0.8 surface into Feishu/Lark Card JSON 2.0.
 
 The goal is to make chat-card UI portable: an LLM or host application can
 produce A2UI messages, and this library compiles them into a Lark interactive
 card while preserving a stable callback contract back to A2UI `userAction`
 events.
+
+For the upstream protocol and specification, see the official A2UI site:
+<https://a2ui.org/>. This project implements a Lark-oriented subset and a few
+experimental extensions; it is not an official A2UI renderer.
 
 ## What It Does
 
@@ -22,7 +26,8 @@ business decisions. Those responsibilities stay with the host application.
 
 ## Current Scope
 
-- A2UI protocol: v0.8.
+- A2UI protocol: v0.8, following the stable protocol published at
+  <https://a2ui.org/>.
 - Target platform: Feishu/Lark interactive cards.
 - Catalog id: `urn:a2ui:catalog:lark-card:v0_8`.
 - Implementation language: TypeScript.

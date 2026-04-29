@@ -4,6 +4,10 @@ This document defines the API shape that TypeScript, Python, Go, Java, or other
 implementations should share. Concrete names can vary by language, but behavior
 and JSON inputs/outputs should stay compatible.
 
+The base protocol is [A2UI](https://a2ui.org/) v0.8. These contracts describe
+the renderer-side API for this Lark implementation, plus explicitly marked
+experimental extensions.
+
 ## Core Operations
 
 ```text

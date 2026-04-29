@@ -1,7 +1,13 @@
 # Lark Card Catalog
 
-The catalog is an A2UI v0.8 custom catalog. It tells the LLM and validators
-which components may be generated for Feishu/Lark card rendering.
+The catalog is an [A2UI](https://a2ui.org/) v0.8 custom catalog. It tells the
+LLM and validators which components may be generated for Feishu/Lark card
+rendering.
+
+The upstream A2UI protocol defines the surface/component/data-binding model and
+allows applications to define custom catalogs for their renderer targets. This
+document describes this repository's Lark-specific catalog and platform mapping;
+it is not an official A2UI standard catalog.
 
 The current stable catalog id is:
 
