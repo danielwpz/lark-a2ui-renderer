@@ -31,6 +31,11 @@ The supported catalog is intentionally smaller than the full A2UI standard
 catalog. It focuses on components that map cleanly into an IM card surface:
 text, layout, buttons, forms, text input, choices, and date input.
 
+The repository also documents an experimental dynamic data source extension for
+live surfaces such as a pixel clock. That extension is not official A2UI v0.8.
+It is tracked separately in
+[docs/dynamic-data-sources.md](docs/dynamic-data-sources.md).
+
 ## Basic Usage
 
 ```ts

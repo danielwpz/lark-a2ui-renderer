@@ -72,3 +72,33 @@ The semantic spec does not yet define hard budgets for:
 - Maximum number of rows/options.
 
 These should come from Feishu/Lark platform limits and operational experience.
+
+Observed Lark pixel-grid experiments suggest that card element/component counts
+become the limiting factor before raw JSON size. A 7 by 27 display succeeded in
+real Lark testing, while larger layouts such as 10 by 40 exceeded card limits.
+The live `Grid` renderer should keep this as a Lark-specific budget, not as a
+channel-neutral A2UI rule.
+
+## Dynamic Data Source Extension
+
+The dynamic data source extension is intentionally experimental:
+
+```text
+urn:a2ui:extension:dynamic-data:v0_1
+```
+
+Open decisions before hardening:
+
+- Whether `dataSourceUpdate` should stay as a top-level extension message or be
+  folded into a future official A2UI version.
+- Which `policy` fields are declaration-only and which are actually enforced by
+  the first TypeScript runtime.
+- Whether inline bash is allowed in production or must be replaced by named,
+  host-approved scripts.
+- How dynamic data source declarations should be persisted and stopped when a
+  surface is deleted.
+- Whether computed property bindings should be added after the initial
+  fully-materialized data model approach.
+
+The MVP decision is narrower: implement only the `bash` driver with interval
+trigger and JSON stdout, then update the surface data model.

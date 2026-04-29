@@ -32,6 +32,9 @@ Current target:
 - A2UI protocol: v0.8 stable.
 - Catalog id: `urn:a2ui:catalog:lark-card:v0_8`.
 - v0.9 work is intentionally out of scope for now.
+- Dynamic data sources and live pixel-grid rendering are custom experimental
+  extensions on top of v0.8. Do not describe them as official A2UI v0.8
+  behavior. See `docs/dynamic-data-sources.md`.
 
 ## Important Local Rules
 
@@ -56,6 +59,8 @@ Current target:
 - `src/v0_8/validate.ts`: Renderer-specific semantic validator.
 - `catalogs/lark-card/v0_8/catalog.json`: Current supported A2UI catalog subset.
 - `docs/llm-authoring.md`: Instruction sheet for LLM JSON generation tests.
+- `docs/dynamic-data-sources.md`: Experimental channel-neutral datasource
+  extension design. It must stay separate from Lark-specific CardKit behavior.
 - `fixtures/`: Stable semantic fixtures.
 - `skills/`: Distributable agent skill for authoring and validating this A2UI
   subset. It must stay usable without the full source repository.

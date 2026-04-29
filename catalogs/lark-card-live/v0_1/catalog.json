@@ -1,0 +1,62 @@
+{
+  "catalogId": "urn:a2ui:catalog:lark-card-live:v0_1",
+  "extends": "urn:a2ui:catalog:lark-card:v0_8",
+  "status": "experimental",
+  "components": {
+    "Grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Experimental two-dimensional layout container. This is not an official A2UI v0.8 base component and is lowered by each channel renderer.",
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cellSize": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Target square cell size in pixels."
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Target spacing between cells in pixels."
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "Fallback CSS color used when a cell value is missing."
+        },
+        "children": {
+          "type": "object",
+          "description": "Optional static list of child component ids. Children are placed row-major into cells.",
+          "additionalProperties": false,
+          "properties": {
+            "explicitList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["explicitList"]
+        },
+        "cellBackgrounds": {
+          "type": "object",
+          "description": "Optional bound value resolving to a dense rows by cols matrix of CSS color strings. This is a pixel-display convenience, not the core Grid model.",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": ["path"]
+        }
+      },
+      "required": ["rows", "cols"]
+    }
+  }
+}

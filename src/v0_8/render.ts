@@ -1,4 +1,4 @@
-import { isRecord, resolveString } from "./json.js";
+import { isRecord, resolveBoundValue, resolveString } from "./json.js";
 import { readComponentRef } from "./surface.js";
 import { CALLBACK_ENVELOPE_VERSION } from "./types.js";
 import type {
@@ -15,6 +15,7 @@ interface RenderContext {
   surface: SurfaceState;
   callbackBindings: CallbackBinding[];
   warnings: RenderWarning[];
+  colorStyles: Map<string, string>;
 }
 
 interface RenderButtonOptions {
@@ -30,9 +31,11 @@ export function renderSurface(surface: SurfaceState): RenderResult {
     surface,
     callbackBindings: [],
     warnings: [],
+    colorStyles: new Map(),
   };
   const elements = renderNodeAsElements(context, surface.root);
   const summary = readStringStyle(surface.styles.summary) ?? summarizeElements(elements);
+  const colorStyles = buildColorStyleConfig(context.colorStyles);
 
   return {
     surfaceId: surface.surfaceId,
@@ -46,6 +49,13 @@ export function renderSurface(surface: SurfaceState): RenderResult {
         summary: {
           content: summary,
         },
+        ...(colorStyles == null
+          ? {}
+          : {
+              style: {
+                color: colorStyles,
+              },
+            }),
       },
       body: {
         elements,
@@ -78,6 +88,8 @@ function renderNodeAsElements(
       return [renderMultipleChoice(context, component.props)];
     case "DateTimeInput":
       return [renderDateTimeInput(context, component.props)];
+    case "Grid":
+      return [renderGrid(context, component.id, component.props)];
     default:
       context.warnings.push({
         code: "UNSUPPORTED_COMPONENT",
@@ -91,6 +103,67 @@ function renderNodeAsElements(
         },
       ];
   }
+}
+
+function renderGrid(
+  context: RenderContext,
+  componentId: string,
+  props: Record<string, unknown>,
+): Record<string, unknown> {
+  const rows = readPositiveInteger(props.rows, "Grid.rows", 1);
+  const cols = readPositiveInteger(props.cols, "Grid.cols", 1);
+  const cellSize = readPositiveInteger(props.cellSize, "Grid.cellSize", 16);
+  const gap = readNonNegativeInteger(props.gap, "Grid.gap", 0);
+  const fallbackColor = readStringStyle(props.backgroundColor) ?? "#ffffff";
+  const cellBackgrounds = resolveGridCellBackgrounds(
+    props.cellBackgrounds,
+    context.surface.dataModel,
+  );
+  const children = readOptionalExplicitChildren(props.children);
+  const verticalPadding = `${Math.floor(cellSize / 2)}px 0px ${Math.floor(cellSize / 2)}px 0px`;
+
+  const rowElements = Array.from({ length: rows }, (_, rowIndex) => ({
+    tag: "column_set",
+    element_id: `${componentId}_row_${rowIndex}`,
+    flex_mode: "none",
+    horizontal_spacing: `${gap}px`,
+    horizontal_align: "left",
+    margin: "0px",
+    columns: Array.from({ length: cols }, (_, colIndex) => {
+      const childId = children[rowIndex * cols + colIndex];
+      const color = readGridCellColor(cellBackgrounds, rowIndex, colIndex) ?? fallbackColor;
+      return {
+        tag: "column",
+        element_id: `${componentId}_px_${rowIndex}_${colIndex}`,
+        width: `${cellSize}px`,
+        vertical_align: "center",
+        vertical_spacing: "0px",
+        padding: verticalPadding,
+        background_style: registerColorStyle(context, color),
+        elements: childId == null ? [] : renderNodeAsElements(context, childId),
+      };
+    }),
+  }));
+
+  return {
+    tag: "column_set",
+    element_id: componentId,
+    flex_mode: "none",
+    horizontal_spacing: "0px",
+    horizontal_align: "left",
+    margin: "0px",
+    columns: [
+      {
+        tag: "column",
+        element_id: `${componentId}_wrapper`,
+        width: `${cols * cellSize + Math.max(0, cols - 1) * gap}px`,
+        vertical_align: "top",
+        vertical_spacing: `${gap}px`,
+        padding: "0px",
+        elements: rowElements,
+      },
+    ],
+  };
 }
 
 function renderText(
@@ -281,6 +354,13 @@ function readExplicitChildren(value: unknown): string[] {
   return childList.explicitList;
 }
 
+function readOptionalExplicitChildren(value: unknown): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  return readExplicitChildren(value);
+}
+
 function readButtonAction(value: unknown): ButtonAction {
   if (!isRecord(value) || typeof value.name !== "string" || value.name.length === 0) {
     throw new Error("Button.action.name is required");
@@ -303,6 +383,87 @@ function readRequiredString(value: unknown, field: string): string {
 
 function readStringStyle(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readPositiveInteger(value: unknown, field: string, fallback: number): number {
+  if (value === undefined) {
+    return fallback;
+  }
+  if (Number.isInteger(value) && (value as number) > 0) {
+    return value as number;
+  }
+  throw new Error(`${field} must be a positive integer`);
+}
+
+function readNonNegativeInteger(value: unknown, field: string, fallback: number): number {
+  if (value === undefined) {
+    return fallback;
+  }
+  if (Number.isInteger(value) && (value as number) >= 0) {
+    return value as number;
+  }
+  throw new Error(`${field} must be a non-negative integer`);
+}
+
+function resolveGridCellBackgrounds(value: unknown, dataModel: unknown): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+  const resolved = resolveBoundValue(value, dataModel);
+  if (resolved !== undefined) {
+    return resolved;
+  }
+  return value;
+}
+
+function readGridCellColor(cells: unknown, rowIndex: number, colIndex: number): string | null {
+  if (!Array.isArray(cells)) {
+    return null;
+  }
+  const row = cells[rowIndex];
+  if (!Array.isArray(row)) {
+    return null;
+  }
+  const cell = row[colIndex];
+  return typeof cell === "string" && cell.length > 0 ? cell : null;
+}
+
+function registerColorStyle(context: RenderContext, color: string): string {
+  const normalized = normalizeCssColor(color);
+  const existing = context.colorStyles.get(normalized);
+  if (existing != null) {
+    return existing;
+  }
+  const key = `a2ui_color_${context.colorStyles.size}`;
+  context.colorStyles.set(normalized, key);
+  return key;
+}
+
+function buildColorStyleConfig(colorStyles: Map<string, string>): Record<string, unknown> | null {
+  if (colorStyles.size === 0) {
+    return null;
+  }
+  const styles: Record<string, unknown> = {};
+  for (const [color, key] of colorStyles.entries()) {
+    styles[key] = {
+      light_mode: color,
+      dark_mode: color,
+    };
+  }
+  return styles;
+}
+
+function normalizeCssColor(color: string): string {
+  const trimmed = color.trim();
+  const hex = /^#([0-9a-f]{6})$/i.exec(trimmed);
+  if (hex?.[1] == null) {
+    return trimmed;
+  }
+  const raw = hex[1];
+  const red = Number.parseInt(raw.slice(0, 2), 16);
+  const green = Number.parseInt(raw.slice(2, 4), 16);
+  const blue = Number.parseInt(raw.slice(4, 6), 16);
+  return `rgba(${red},${green},${blue},1)`;
 }
 
 function mapHorizontalAlign(value: unknown): string {

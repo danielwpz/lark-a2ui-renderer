@@ -7,6 +7,10 @@ export class SurfaceStore {
             this.applyMessage(message);
         }
     }
+    updateDataModel(surfaceId, path, value) {
+        const surface = this.ensureSurface(surfaceId);
+        surface.dataModel = setJsonPointer(surface.dataModel, path, value);
+    }
     getSurface(surfaceId) {
         const surface = this.surfaces.get(surfaceId);
         if (surface == null) {
@@ -41,9 +45,8 @@ export class SurfaceStore {
     }
     applyDataModelUpdate(message) {
         const update = message.dataModelUpdate;
-        const surface = this.ensureSurface(update.surfaceId);
         const value = dataEntriesToValue(update.contents);
-        surface.dataModel = setJsonPointer(surface.dataModel, update.path ?? "/", value);
+        this.updateDataModel(update.surfaceId, update.path ?? "/", value);
     }
     applyBeginRendering(message) {
         const begin = message.beginRendering;

@@ -1,4 +1,6 @@
 export const LARK_CARD_CATALOG_ID = "urn:a2ui:catalog:lark-card:v0_8";
+export const LARK_CARD_LIVE_CATALOG_ID = "urn:a2ui:catalog:lark-card-live:v0_1";
+export const DYNAMIC_DATA_EXTENSION_ID = "urn:a2ui:extension:dynamic-data:v0_1";
 export const CALLBACK_ENVELOPE_VERSION = "v0_8";
 
 export type JsonPrimitive = string | number | boolean | null;
@@ -50,11 +52,51 @@ export interface DeleteSurfaceMessage {
   };
 }
 
+export interface DataSourceUpdateMessage {
+  dataSourceUpdate: {
+    surfaceId: string;
+    extensionId?: typeof DYNAMIC_DATA_EXTENSION_ID;
+    sources: DataSourceDeclaration[];
+  };
+}
+
+export interface DataSourceDeclaration {
+  id: string;
+  driver: "bash";
+  trigger: IntervalDataSourceTrigger;
+  program: BashDataSourceProgram;
+  output: JsonDataSourceOutput;
+  policy?: DataSourcePolicy;
+}
+
+export interface IntervalDataSourceTrigger {
+  type: "interval";
+  everyMs: number;
+}
+
+export interface BashDataSourceProgram {
+  script: string;
+}
+
+export interface JsonDataSourceOutput {
+  format: "json";
+  target: string;
+}
+
+export interface DataSourcePolicy {
+  timeoutMs?: number;
+  maxOutputBytes?: number;
+  network?: boolean;
+  writeFs?: boolean;
+}
+
 export type A2uiServerMessage =
   | SurfaceUpdateMessage
   | DataModelUpdateMessage
   | BeginRenderingMessage
   | DeleteSurfaceMessage;
+
+export type A2uiRuntimeMessage = A2uiServerMessage | DataSourceUpdateMessage;
 
 export interface A2uiComponentNode {
   id: string;
@@ -133,4 +175,11 @@ export interface RenderResult {
   card: Record<string, unknown>;
   callbackBindings: CallbackBinding[];
   warnings: RenderWarning[];
+}
+
+export interface DataModelChangeEvent {
+  surfaceId: string;
+  path: string;
+  value: unknown;
+  sourceId?: string;
 }

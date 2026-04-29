@@ -6,8 +6,10 @@ import { describe, test } from "vitest";
 import "./load-integration-env.js";
 
 import {
+  DYNAMIC_DATA_EXTENSION_ID,
   formatValidationIssues,
   LARK_CARD_COMPONENT_TYPES,
+  LARK_CARD_CATALOG_ID,
   normalizeCallback,
   readComponentRef,
   renderSurface,
@@ -15,6 +17,7 @@ import {
   validateA2uiMessages,
 } from "../../src/v0_8/index.js";
 import type {
+  A2uiRuntimeMessage,
   A2uiServerMessage,
   NormalizedCallbackInput,
   SurfaceState,
@@ -96,6 +99,70 @@ describe.skipIf(!shouldRun)("LLM A2UI generation integration", () => {
       "LLM scenarios must cover every supported component type",
     );
   }, 240_000);
+
+  test("scenario: dynamic service status from skill docs", async () => {
+    const skill = readFileSync(join(rootDir, "skills", "SKILL.md"), "utf8");
+    const protocol = readFileSync(join(rootDir, "skills", "references", "protocol.md"), "utf8");
+    const examples = readFileSync(join(rootDir, "skills", "references", "examples.md"), "utf8");
+    const catalog = readFileSync(
+      join(rootDir, "catalogs", "lark-card", "v0_8", "catalog.json"),
+      "utf8",
+    );
+    const content = await generateWithLlm({
+      system: [
+        "You generate valid A2UI JSON for the lark-a2ui-renderer skill.",
+        "Read the skill instructions and references, then apply the general dynamic data source model.",
+        "beginRendering must use the exact v0.8 field name root, never rootComponentId.",
+        "Return JSON only.",
+        "",
+        "Skill:",
+        skill,
+        "",
+        "Protocol reference:",
+        protocol,
+        "",
+        "Examples:",
+        examples,
+        "",
+        "Base catalog JSON:",
+        catalog,
+      ].join("\n"),
+      user: [
+        "Generate an experimental dynamic service status card, not a pixel display.",
+        "The card must show a service status and latency that refresh from a bash data source.",
+        "Use dataSourceUpdate with extension urn:a2ui:extension:dynamic-data:v0_1.",
+        "Use exactly one bash data source named service, interval trigger everyMs 1000, JSON stdout, and output target /service.",
+        "Use ordinary Text/Column components from catalog urn:a2ui:catalog:lark-card:v0_8.",
+        "Bind visible text to /service/status and /service/latencyMs with path bindings.",
+        "The beginRendering message must use root to reference the root component id.",
+        "Do not use Grid and do not generate raw Lark Card JSON.",
+      ].join("\n"),
+    });
+    const messages = extractJson(content);
+    const validation = validateA2uiMessages(messages, { allowDynamicDataSources: true });
+    const componentTypes = collectComponentTypes(messages);
+
+    console.log("LLM scenario: dynamic service status");
+    console.log(JSON.stringify(messages, null, 2));
+
+    assert.equal(validation.ok, true, formatValidationIssues(validation.issues));
+    assert.ok(componentTypes.has("Text"), "dynamic service status must include Text");
+    assert.ok(componentTypes.has("Column"), "dynamic service status must include Column");
+    assert.equal(componentTypes.has("Grid"), false, "service status should not use Grid");
+    assertDynamicServiceStatusDeclaration(messages);
+
+    const runtimeMessages = messages as A2uiRuntimeMessage[];
+    const store = new SurfaceStore();
+    store.applyMessages(runtimeMessages.filter(isCoreServerMessage));
+    const surfaceId = validation.renderedSurfaceIds[0];
+    assert.ok(surfaceId);
+    store.updateDataModel(surfaceId, "/service", { status: "healthy", latencyMs: 42 });
+    const rendered = renderSurface(store.getSurface(surfaceId));
+    const cardJson = JSON.stringify(rendered.card);
+    assert.equal(rendered.warnings.length, 0);
+    assert.match(cardJson, /healthy/);
+    assert.match(cardJson, /42/);
+  }, 120_000);
 });
 
 async function runScenario(scenario: LlmScenario): Promise<ScenarioRunResult> {
@@ -108,6 +175,7 @@ async function runScenario(scenario: LlmScenario): Promise<ScenarioRunResult> {
     system: [
       "You generate valid A2UI v0.8 JSON for the lark-card catalog.",
       "Follow the authoring guide exactly.",
+      "beginRendering must use the exact field name root, never rootComponentId.",
       "Return JSON only.",
       "",
       guide,
@@ -119,6 +187,7 @@ async function runScenario(scenario: LlmScenario): Promise<ScenarioRunResult> {
       scenario.prompt,
       "",
       `Required components for this scenario: ${scenario.requiredComponents.join(", ")}.`,
+      "The beginRendering message must use root to reference the root component id.",
       "The output must validate against the renderer subset and must not use unsupported fields.",
     ].join("\n"),
   });
@@ -305,6 +374,51 @@ function assertRequiredComponents(
 ): void {
   const missing = requiredComponents.filter((type) => !observedComponents.has(type));
   assert.deepEqual(missing, [], `${scenarioName} did not include required components`);
+}
+
+function assertDynamicServiceStatusDeclaration(messages: unknown): void {
+  assert.ok(Array.isArray(messages), "LLM output must be a message array");
+  const dataSourceUpdates = messages.filter(
+    (message): message is Record<string, unknown> =>
+      isRecord(message) && isRecord(message.dataSourceUpdate),
+  );
+  assert.equal(dataSourceUpdates.length, 1, "expected exactly one dataSourceUpdate");
+
+  const dataSourceUpdate = dataSourceUpdates[0]?.dataSourceUpdate;
+  assert.ok(isRecord(dataSourceUpdate));
+  assert.equal(dataSourceUpdate.extensionId, DYNAMIC_DATA_EXTENSION_ID);
+  const sources = dataSourceUpdate.sources;
+  assert.ok(Array.isArray(sources));
+  assert.equal(sources.length, 1, "expected exactly one data source");
+  const source = sources[0];
+  assert.ok(isRecord(source));
+  assert.equal(source.id, "service");
+  assert.equal(source.driver, "bash");
+  assert.ok(isRecord(source.trigger));
+  assert.equal(source.trigger.type, "interval");
+  assert.equal(source.trigger.everyMs, 1000);
+  assert.ok(isRecord(source.program));
+  assert.equal(typeof source.program.script, "string");
+  assert.ok(isRecord(source.output));
+  assert.equal(source.output.format, "json");
+  assert.equal(source.output.target, "/service");
+
+  const beginRenderings = messages.filter(
+    (message): message is Record<string, unknown> =>
+      isRecord(message) && isRecord(message.beginRendering),
+  );
+  assert.equal(beginRenderings.length, 1, "expected exactly one beginRendering");
+  const beginRendering = beginRenderings[0]?.beginRendering;
+  assert.ok(isRecord(beginRendering));
+  assert.equal(beginRendering.catalogId, LARK_CARD_CATALOG_ID);
+
+  const encoded = JSON.stringify(messages);
+  assert.match(encoded, /\/service\/status/);
+  assert.match(encoded, /\/service\/latencyMs/);
+}
+
+function isCoreServerMessage(message: A2uiRuntimeMessage): message is A2uiServerMessage {
+  return !("dataSourceUpdate" in message);
 }
 
 function normalizeGeneratedFormSubmits(surface: SurfaceState): number {

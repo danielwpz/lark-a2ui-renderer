@@ -30,7 +30,7 @@
     "test": "vitest run test/unit",
     "test:unit": "vitest run test/unit",
     "test:integration:llm": "vitest run test/integration/llm-generation.test.ts",
-    "test:integration:lark": "vitest run test/integration/lark.interactive.test.ts",
+    "test:integration:lark": "vitest run test/integration/lark.interactive.test.ts test/integration/lark-live-dynamic.test.ts",
     "precommit": "pnpm lint && pnpm format:check && pnpm test:unit && pnpm build",
     "check": "pnpm lint && pnpm format:check && pnpm build && pnpm test:unit"
   },

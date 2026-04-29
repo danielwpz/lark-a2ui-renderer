@@ -1,8 +1,12 @@
 import { isRecord } from "./json.js";
 import { renderSurface } from "./render.js";
 import { SurfaceStore, readComponentRef } from "./surface.js";
-import { LARK_CARD_CATALOG_ID } from "./types.js";
-import type { A2uiServerMessage, SurfaceState } from "./types.js";
+import {
+  DYNAMIC_DATA_EXTENSION_ID,
+  LARK_CARD_CATALOG_ID,
+  LARK_CARD_LIVE_CATALOG_ID,
+} from "./types.js";
+import type { A2uiRuntimeMessage, A2uiServerMessage, SurfaceState } from "./types.js";
 
 export const LARK_CARD_COMPONENT_TYPES = [
   "Text",
@@ -17,6 +21,10 @@ export const LARK_CARD_COMPONENT_TYPES = [
 ] as const;
 
 export type LarkCardComponentType = (typeof LARK_CARD_COMPONENT_TYPES)[number];
+
+const LARK_EXTENSION_COMPONENT_TYPES = ["Grid"] as const;
+type LarkExtensionComponentType = (typeof LARK_EXTENSION_COMPONENT_TYPES)[number];
+type LarkRenderableComponentType = LarkCardComponentType | LarkExtensionComponentType;
 
 export interface ValidationIssue {
   path: string;
@@ -34,10 +42,15 @@ export interface ValidationOptions {
   requireBeginRendering?: boolean;
   requireCatalogId?: boolean;
   treatRenderWarningsAsErrors?: boolean;
+  allowDynamicDataSources?: boolean;
 }
 
-const COMPONENT_TYPE_SET = new Set<string>(LARK_CARD_COMPONENT_TYPES);
-const MESSAGE_KEYS = ["surfaceUpdate", "dataModelUpdate", "beginRendering", "deleteSurface"];
+const RENDERABLE_COMPONENT_TYPE_SET = new Set<string>([
+  ...LARK_CARD_COMPONENT_TYPES,
+  ...LARK_EXTENSION_COMPONENT_TYPES,
+]);
+const CORE_MESSAGE_KEYS = ["surfaceUpdate", "dataModelUpdate", "beginRendering", "deleteSurface"];
+const EXTENSION_MESSAGE_KEYS = ["dataSourceUpdate"];
 
 export function validateA2uiMessages(
   input: unknown,
@@ -46,6 +59,7 @@ export function validateA2uiMessages(
   const requireBeginRendering = options.requireBeginRendering ?? true;
   const requireCatalogId = options.requireCatalogId ?? true;
   const treatRenderWarningsAsErrors = options.treatRenderWarningsAsErrors ?? true;
+  const allowDynamicDataSources = options.allowDynamicDataSources ?? false;
   const issues: ValidationIssue[] = [];
 
   if (!Array.isArray(input)) {
@@ -67,6 +81,7 @@ export function validateA2uiMessages(
   for (const [index, message] of input.entries()) {
     validateMessage(message, index, issues, beginSurfaceIds, componentIdsBySurface, {
       requireCatalogId,
+      allowDynamicDataSources,
     });
   }
 
@@ -78,7 +93,7 @@ export function validateA2uiMessages(
   if (!hasErrors(issues)) {
     try {
       const store = new SurfaceStore();
-      store.applyMessages(input as A2uiServerMessage[]);
+      store.applyMessages((input as A2uiRuntimeMessage[]).filter(isCoreServerMessage));
       for (const surfaceId of beginSurfaceIds) {
         const surface = store.getSurface(surfaceId);
         validateRenderedSurface(surface, issues);
@@ -107,7 +122,7 @@ export function validateA2uiMessages(
 export function assertValidA2uiMessages(
   input: unknown,
   options: ValidationOptions = {},
-): asserts input is A2uiServerMessage[] {
+): asserts input is A2uiRuntimeMessage[] {
   const result = validateA2uiMessages(input, options);
   if (!result.ok) {
     throw new Error(formatValidationIssues(result.issues));
@@ -126,7 +141,7 @@ function validateMessage(
   issues: ValidationIssue[],
   beginSurfaceIds: Set<string>,
   componentIdsBySurface: Map<string, Set<string>>,
-  options: { requireCatalogId: boolean },
+  options: { requireCatalogId: boolean; allowDynamicDataSources: boolean },
 ): void {
   const path = `$[${index}]`;
   if (!isRecord(message)) {
@@ -134,7 +149,10 @@ function validateMessage(
     return;
   }
 
-  const presentKeys = MESSAGE_KEYS.filter((key) => key in message);
+  const messageKeys = options.allowDynamicDataSources
+    ? [...CORE_MESSAGE_KEYS, ...EXTENSION_MESSAGE_KEYS]
+    : CORE_MESSAGE_KEYS;
+  const presentKeys = messageKeys.filter((key) => key in message);
   if (presentKeys.length !== 1) {
     addError(issues, path, "Message must contain exactly one A2UI v0.8 message key");
     return;
@@ -162,6 +180,10 @@ function validateMessage(
       beginSurfaceIds,
       options,
     );
+    return;
+  }
+  if (key === "dataSourceUpdate") {
+    validateDataSourceUpdate(message.dataSourceUpdate, `${path}.dataSourceUpdate`, issues);
     return;
   }
   validateDeleteSurface(message.deleteSurface, `${path}.deleteSurface`, issues);
@@ -236,13 +258,41 @@ function validateBeginRendering(
   if (options.requireCatalogId && readString(value.catalogId) == null) {
     addError(issues, `${path}.catalogId`, "catalogId is required for Lark card generation");
   }
-  if (value.catalogId !== undefined && value.catalogId !== LARK_CARD_CATALOG_ID) {
+  if (
+    value.catalogId !== undefined &&
+    value.catalogId !== LARK_CARD_CATALOG_ID &&
+    value.catalogId !== LARK_CARD_LIVE_CATALOG_ID
+  ) {
     addError(
       issues,
       `${path}.catalogId`,
-      `catalogId must be '${LARK_CARD_CATALOG_ID}' for this renderer`,
+      `catalogId must be '${LARK_CARD_CATALOG_ID}' or '${LARK_CARD_LIVE_CATALOG_ID}' for this renderer`,
     );
   }
+}
+
+function validateDataSourceUpdate(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (!isRecord(value)) {
+    addError(issues, path, "dataSourceUpdate must be an object");
+    return;
+  }
+  if (readString(value.surfaceId) == null) {
+    addError(issues, `${path}.surfaceId`, "surfaceId is required");
+  }
+  if (value.extensionId !== undefined && value.extensionId !== DYNAMIC_DATA_EXTENSION_ID) {
+    addError(
+      issues,
+      `${path}.extensionId`,
+      `extensionId must be '${DYNAMIC_DATA_EXTENSION_ID}' when provided`,
+    );
+  }
+  if (!Array.isArray(value.sources)) {
+    addError(issues, `${path}.sources`, "sources must be an array");
+    return;
+  }
+  value.sources.forEach((source, index) => {
+    validateDataSourceDeclaration(source, `${path}.sources[${index}]`, issues);
+  });
 }
 
 function validateDeleteSurface(value: unknown, path: string, issues: ValidationIssue[]): void {
@@ -284,7 +334,7 @@ function validateComponentNode(
     return;
   }
   const [type, props] = entries[0] as [string, unknown];
-  if (!COMPONENT_TYPE_SET.has(type)) {
+  if (!RENDERABLE_COMPONENT_TYPE_SET.has(type)) {
     addError(issues, `${path}.component.${type}`, `Unsupported component type '${type}'`);
     return;
   }
@@ -292,11 +342,16 @@ function validateComponentNode(
     addError(issues, `${path}.component.${type}`, "Component properties must be an object");
     return;
   }
-  validateComponentProps(type as LarkCardComponentType, props, `${path}.component.${type}`, issues);
+  validateComponentProps(
+    type as LarkRenderableComponentType,
+    props,
+    `${path}.component.${type}`,
+    issues,
+  );
 }
 
 function validateComponentProps(
-  type: LarkCardComponentType,
+  type: LarkRenderableComponentType,
   props: Record<string, unknown>,
   path: string,
   issues: ValidationIssue[],
@@ -350,6 +405,9 @@ function validateComponentProps(
       }
       validateBoundString(props.value, `${path}.value`, issues);
       return;
+    case "Grid":
+      validateGridProps(props, path, issues);
+      return;
   }
 }
 
@@ -359,6 +417,16 @@ function validateRenderedSurface(surface: SurfaceState, issues: ValidationIssue[
     const component = readComponentRef(surface, node.id);
     if (component.type === "Column" || component.type === "Row") {
       validateChildReferences(surface, component.props.children, node.id, issues);
+    }
+    if (component.type === "Grid") {
+      validateChildReferences(surface, component.props.children, node.id, issues);
+    }
+    if (component.type === "Grid" && surface.catalogId !== LARK_CARD_LIVE_CATALOG_ID) {
+      addError(
+        issues,
+        `$.surface(${surface.surfaceId}).component(${node.id})`,
+        `Grid requires catalogId '${LARK_CARD_LIVE_CATALOG_ID}'`,
+      );
     }
     if (component.type === "Form") {
       validateChildReferences(surface, component.props.children, node.id, issues);
@@ -391,6 +459,30 @@ function validateRenderedSurface(surface: SurfaceState, issues: ValidationIssue[
       }
       inputNames.add(name);
     }
+  }
+}
+
+function validateGridProps(
+  props: Record<string, unknown>,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  validatePositiveInteger(props.rows, `${path}.rows`, issues);
+  validatePositiveInteger(props.cols, `${path}.cols`, issues);
+  if (props.cellSize !== undefined) {
+    validatePositiveInteger(props.cellSize, `${path}.cellSize`, issues);
+  }
+  if (props.gap !== undefined) {
+    validateNonNegativeInteger(props.gap, `${path}.gap`, issues);
+  }
+  if (props.backgroundColor !== undefined && readString(props.backgroundColor) == null) {
+    addError(issues, `${path}.backgroundColor`, "Grid.backgroundColor must be a string");
+  }
+  if (props.children !== undefined) {
+    validateChildren(props.children, `${path}.children`, issues);
+  }
+  if (props.cellBackgrounds !== undefined && !isRecord(props.cellBackgrounds)) {
+    addError(issues, `${path}.cellBackgrounds`, "Grid.cellBackgrounds must be a bound value");
   }
 }
 
@@ -476,6 +568,62 @@ function validateBoundString(value: unknown, path: string, issues: ValidationIss
   if (!hasLiteral && !hasPath) {
     addError(issues, path, "Use literalString for fixed text or path for data-model text");
   }
+}
+
+function validateDataSourceDeclaration(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+): void {
+  if (!isRecord(value)) {
+    addError(issues, path, "Data source declaration must be an object");
+    return;
+  }
+  if (readString(value.id) == null) {
+    addError(issues, `${path}.id`, "Data source id is required");
+  }
+  if (value.driver !== "bash") {
+    addError(issues, `${path}.driver`, "Only bash data source driver is supported");
+  }
+  if (!isRecord(value.trigger)) {
+    addError(issues, `${path}.trigger`, "Data source trigger is required");
+  } else {
+    if (value.trigger.type !== "interval") {
+      addError(issues, `${path}.trigger.type`, "Only interval trigger is supported");
+    }
+    validatePositiveInteger(value.trigger.everyMs, `${path}.trigger.everyMs`, issues);
+  }
+  if (!isRecord(value.program)) {
+    addError(issues, `${path}.program`, "Data source program is required");
+  } else if (readString(value.program.script) == null) {
+    addError(issues, `${path}.program.script`, "program.script is required");
+  }
+  if (!isRecord(value.output)) {
+    addError(issues, `${path}.output`, "Data source output is required");
+  } else {
+    if (value.output.format !== "json") {
+      addError(issues, `${path}.output.format`, "Only json output is supported");
+    }
+    if (readString(value.output.target) == null || !String(value.output.target).startsWith("/")) {
+      addError(issues, `${path}.output.target`, "output.target must be a JSON pointer");
+    }
+  }
+}
+
+function validatePositiveInteger(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (!Number.isInteger(value) || (value as number) < 1) {
+    addError(issues, path, "Value must be a positive integer");
+  }
+}
+
+function validateNonNegativeInteger(value: unknown, path: string, issues: ValidationIssue[]): void {
+  if (!Number.isInteger(value) || (value as number) < 0) {
+    addError(issues, path, "Value must be a non-negative integer");
+  }
+}
+
+function isCoreServerMessage(message: A2uiRuntimeMessage): message is A2uiServerMessage {
+  return !("dataSourceUpdate" in message);
 }
 
 function validateDataEntry(value: unknown, path: string, issues: ValidationIssue[]): void {

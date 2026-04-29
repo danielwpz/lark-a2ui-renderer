@@ -15,6 +15,17 @@ normalizeCallback(surfaceStore, callbackInput) -> clientEvent
 These operations are pure from the perspective of network I/O. They do not send
 messages to Feishu/Lark and do not call an LLM.
 
+Experimental dynamic data source support adds a separate runtime contract:
+
+```text
+applyDataSourceUpdate(runtime, dataSourceUpdate) -> runtime
+startDataSources(runtime, surfaceId) -> disposable
+```
+
+This contract is not part of official A2UI v0.8. It belongs to
+`urn:a2ui:extension:dynamic-data:v0_1` and is described in
+[dynamic-data-sources.md](dynamic-data-sources.md).
+
 ## applyMessages
 
 Input:
@@ -60,6 +71,10 @@ Required semantics:
 - Rendering details such as exact spacing, markdown element choice, and column
   widths are implementation details. They must not change the user action
   semantics.
+- `renderSurface` must remain deterministic for a given surface state. Dynamic
+  data sources may change the surface data model over time, but the renderer
+  itself should not run data source programs, timers, network calls, or platform
+  update APIs.
 
 ## normalizeCallback
 
@@ -93,6 +108,30 @@ extractLarkCallback(rawPayload) -> normalizedCallbackInput
 The TypeScript implementation supports the official `card.action.trigger`
 wrapper shape and SDK-style unwrapped event objects. Raw payload fixtures should
 only be committed after being captured from a real integration run and reviewed.
+
+## Dynamic Data Runtime Extension
+
+The dynamic data runtime consumes custom `dataSourceUpdate` messages and writes
+their output into the normal surface data model.
+
+Required MVP semantics:
+
+- Accept `dataSourceUpdate.surfaceId`.
+- Accept `extensionId: "urn:a2ui:extension:dynamic-data:v0_1"`.
+- Accept `driver: "bash"`.
+- Support interval triggers with `everyMs`.
+- Run `program.script`.
+- Parse stdout as JSON when `output.format` is `"json"`.
+- Write the parsed value to `output.target` using JSON Pointer semantics.
+- Notify the host or adapter that the surface should be re-rendered.
+
+The runtime should not include Lark-specific behavior. It must not know about
+CardKit, Lark card ids, message ids, or Card JSON.
+
+`policy` fields such as `timeoutMs`, `maxOutputBytes`, `network`, and `writeFs`
+are part of the declaration shape, but full sandbox enforcement is not required
+for the first MVP. Implementations should document which policy fields are
+actually enforced.
 
 ## Test Strategy
 
