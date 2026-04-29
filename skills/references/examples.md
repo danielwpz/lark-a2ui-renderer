@@ -318,3 +318,64 @@ when the UI really needs a matrix of colored cells.
   }
 ]
 ```
+
+## Dynamic 7x27 Pixel Clock
+
+Use this pattern when the user asks for a pixel clock, dot-matrix clock, LED
+clock, or `HH:MM:SS` rendered as pixels. Do not use `Text` to display the time.
+The visible clock must be the `Grid`; the data source returns a color matrix and
+`Grid.cellBackgrounds` binds to that matrix.
+
+This example uses 3x7 digit glyphs, two 1-column colons, and one empty column of
+spacing after each digit/colon. The occupied pixels fit exactly into 7 rows and
+27 columns for `HH:MM:SS`.
+
+```json
+[
+  {
+    "dataSourceUpdate": {
+      "surfaceId": "pixel_clock",
+      "extensionId": "urn:a2ui:extension:dynamic-data:v0_1",
+      "sources": [
+        {
+          "id": "clock_pixels",
+          "driver": "bash",
+          "trigger": { "type": "interval", "everyMs": 1000 },
+          "program": {
+            "script": "node -e 'const W=27,H=7,off=\"#ffffff\";const colors=[\"#ff4d4f\",\"#1677ff\",\"#52c41a\",\"#faad14\",\"#722ed1\",\"#13c2c2\"];const glyph={0:[\"111\",\"101\",\"101\",\"101\",\"101\",\"101\",\"111\"],1:[\"010\",\"110\",\"010\",\"010\",\"010\",\"010\",\"111\"],2:[\"111\",\"001\",\"001\",\"111\",\"100\",\"100\",\"111\"],3:[\"111\",\"001\",\"001\",\"111\",\"001\",\"001\",\"111\"],4:[\"101\",\"101\",\"101\",\"111\",\"001\",\"001\",\"001\"],5:[\"111\",\"100\",\"100\",\"111\",\"001\",\"001\",\"111\"],6:[\"111\",\"100\",\"100\",\"111\",\"101\",\"101\",\"111\"],7:[\"111\",\"001\",\"001\",\"010\",\"010\",\"010\",\"010\"],8:[\"111\",\"101\",\"101\",\"111\",\"101\",\"101\",\"111\"],9:[\"111\",\"101\",\"101\",\"111\",\"001\",\"001\",\"111\"]};const s=new Date().toTimeString().slice(0,8);const rows=Array.from({length:H},()=>Array(W).fill(off));let x=0,di=0;for(const ch of s){if(ch===\":\"){for(const y of [2,4])rows[y][x]=\"#333333\";x+=2;continue}const g=glyph[ch],on=colors[di++%colors.length];for(let y=0;y<H;y++)for(let dx=0;dx<3;dx++)if(g[y][dx]===\"1\")rows[y][x+dx]=on;x+=4}console.log(JSON.stringify({pixels:rows,time:s}))'"
+          },
+          "output": { "format": "json", "target": "/clock" },
+          "policy": { "timeoutMs": 1000, "maxOutputBytes": 20000 }
+        }
+      ]
+    }
+  },
+  {
+    "surfaceUpdate": {
+      "surfaceId": "pixel_clock",
+      "components": [
+        {
+          "id": "display",
+          "component": {
+            "Grid": {
+              "rows": 7,
+              "cols": 27,
+              "cellSize": 16,
+              "gap": 0,
+              "backgroundColor": "#ffffff",
+              "cellBackgrounds": { "path": "/clock/pixels" }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "beginRendering": {
+      "surfaceId": "pixel_clock",
+      "catalogId": "urn:a2ui:catalog:lark-card-live:v0_1",
+      "root": "display"
+    }
+  }
+]
+```

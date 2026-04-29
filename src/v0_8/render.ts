@@ -22,6 +22,8 @@ interface RenderButtonOptions {
   actionType?: "form_submit";
 }
 
+const LARK_EMPTY_GRID_CELL_MIN_SIZE_PX = 16;
+
 export function renderSurface(surface: SurfaceState): RenderResult {
   if (surface.root == null) {
     throw new Error(`Surface '${surface.surfaceId}' has not received beginRendering`);
@@ -33,6 +35,8 @@ export function renderSurface(surface: SurfaceState): RenderResult {
     warnings: [],
     colorStyles: new Map(),
   };
+  const rootComponent = readComponentRef(surface, surface.root);
+  const isGridSurface = rootComponent.type === "Grid";
   const elements = renderNodeAsElements(context, surface.root);
   const summary = readStringStyle(surface.styles.summary) ?? summarizeElements(elements);
   const colorStyles = buildColorStyleConfig(context.colorStyles);
@@ -45,7 +49,7 @@ export function renderSurface(surface: SurfaceState): RenderResult {
       schema: "2.0",
       config: {
         update_multi: true,
-        wide_screen_mode: false,
+        wide_screen_mode: isGridSurface,
         summary: {
           content: summary,
         },
@@ -57,6 +61,17 @@ export function renderSurface(surface: SurfaceState): RenderResult {
               },
             }),
       },
+      ...(isGridSurface
+        ? {
+            header: {
+              title: {
+                tag: "plain_text",
+                content: summary,
+              },
+              template: "green",
+            },
+          }
+        : {}),
       body: {
         elements,
       },
@@ -112,7 +127,7 @@ function renderGrid(
 ): Record<string, unknown> {
   const rows = readPositiveInteger(props.rows, "Grid.rows", 1);
   const cols = readPositiveInteger(props.cols, "Grid.cols", 1);
-  const cellSize = readPositiveInteger(props.cellSize, "Grid.cellSize", 16);
+  const requestedCellSize = readPositiveInteger(props.cellSize, "Grid.cellSize", 16);
   const gap = readNonNegativeInteger(props.gap, "Grid.gap", 0);
   const fallbackColor = readStringStyle(props.backgroundColor) ?? "#ffffff";
   const cellBackgrounds = resolveGridCellBackgrounds(
@@ -120,6 +135,10 @@ function renderGrid(
     context.surface.dataModel,
   );
   const children = readOptionalExplicitChildren(props.children);
+  const cellSize =
+    children.length === 0
+      ? Math.max(requestedCellSize, LARK_EMPTY_GRID_CELL_MIN_SIZE_PX)
+      : requestedCellSize;
   const verticalPadding = `${Math.floor(cellSize / 2)}px 0px ${Math.floor(cellSize / 2)}px 0px`;
 
   const rowElements = Array.from({ length: rows }, (_, rowIndex) => ({
@@ -128,7 +147,8 @@ function renderGrid(
     flex_mode: "none",
     horizontal_spacing: `${gap}px`,
     horizontal_align: "left",
-    margin: "0px",
+    margin: rowIndex === 0 ? "0px" : `${gap}px 0px 0px 0px`,
+    background_style: "default",
     columns: Array.from({ length: cols }, (_, colIndex) => {
       const childId = children[rowIndex * cols + colIndex];
       const color = readGridCellColor(cellBackgrounds, rowIndex, colIndex) ?? fallbackColor;
@@ -152,14 +172,16 @@ function renderGrid(
     horizontal_spacing: "0px",
     horizontal_align: "left",
     margin: "0px",
+    background_style: "default",
     columns: [
       {
         tag: "column",
         element_id: `${componentId}_wrapper`,
         width: `${cols * cellSize + Math.max(0, cols - 1) * gap}px`,
         vertical_align: "top",
-        vertical_spacing: `${gap}px`,
+        vertical_spacing: "0px",
         padding: "0px",
+        background_style: "default",
         elements: rowElements,
       },
     ],

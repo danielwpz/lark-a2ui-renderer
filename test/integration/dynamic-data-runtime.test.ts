@@ -152,10 +152,70 @@ describe("dynamic data source extension", () => {
     const leftElements = readArray(leftCell.elements);
     const rightElements = readArray(rightCell.elements);
     const config = readRecord(rendered.card.config);
+    const header = readRecord(rendered.card.header);
 
     assert.equal(readRecord(leftElements[0]).content, "L");
     assert.equal(readRecord(rightElements[0]).content, "R");
+    assert.equal(config.wide_screen_mode, true);
+    assert.equal(grid.background_style, "default");
+    assert.equal(wrapper.background_style, "default");
+    assert.equal(firstRow.background_style, "default");
+    assert.equal(typeof readRecord(header.title).content, "string");
     assert.ok(config.style != null);
+  });
+
+  test("renders empty pixel Grid cells at the known Lark-visible minimum size", () => {
+    const messages: A2uiRuntimeMessage[] = [
+      {
+        surfaceUpdate: {
+          surfaceId: "pixel_grid_surface",
+          components: [
+            {
+              id: "grid",
+              component: {
+                Grid: {
+                  rows: 1,
+                  cols: 1,
+                  cellSize: 10,
+                  gap: 0,
+                  backgroundColor: "#ffffff",
+                  cellBackgrounds: {
+                    path: "/grid/backgrounds",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        beginRendering: {
+          surfaceId: "pixel_grid_surface",
+          catalogId: LARK_CARD_LIVE_CATALOG_ID,
+          root: "grid",
+        },
+      },
+    ];
+    const validation = validateA2uiMessages(messages, { allowDynamicDataSources: true });
+    assert.deepEqual(validation.issues, []);
+
+    const store = new SurfaceStore();
+    store.applyMessages(messages.filter(isCoreServerMessage));
+    store.updateDataModel("pixel_grid_surface", "/grid/backgrounds", [["#ff0000"]]);
+    const rendered = renderSurface(store.getSurface("pixel_grid_surface"));
+    const body = readRecord(rendered.card.body);
+    const elements = readArray(body.elements);
+    const grid = readRecord(elements[0]);
+    const gridColumns = readArray(grid.columns);
+    const wrapper = readRecord(gridColumns[0]);
+    const wrapperElements = readArray(wrapper.elements);
+    const firstRow = readRecord(wrapperElements[0]);
+    const firstRowColumns = readArray(firstRow.columns);
+    const firstCell = readRecord(firstRowColumns[0]);
+
+    assert.equal(wrapper.width, "16px");
+    assert.equal(firstCell.width, "16px");
+    assert.equal(firstCell.padding, "8px 0px 8px 0px");
   });
 });
 

@@ -21,3 +21,11 @@ node skills/scripts/validate-a2ui.js --version v0_8 path/to/a2ui.messages.json
 
 5. For user replies, reason from A2UI `userAction` events. Do not expose raw
    Feishu/Lark callback payloads to application logic or an LLM.
+
+## Pixel Clock Rule
+
+When the user asks for a pixel clock, dot-matrix clock, LED clock, or a clock
+using a pixel matrix, do not render the current time as a `Text` component.
+Use the live `Grid` component and bind `Grid.cellBackgrounds` to a dynamic data
+source that returns a two-dimensional color matrix. See "Dynamic 7x27 Pixel
+Clock" in [references/examples.md](references/examples.md).
