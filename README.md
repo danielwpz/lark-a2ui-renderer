@@ -41,6 +41,9 @@ live surfaces such as a pixel clock. That extension is not official A2UI v0.8.
 It is tracked separately in
 [docs/dynamic-data-sources.md](docs/dynamic-data-sources.md).
 
+> Notice: the packaged `skills/` authoring skill is static-only and does not
+> include dynamic data source instructions or runtime support.
+
 ## Basic Usage
 
 ```ts
