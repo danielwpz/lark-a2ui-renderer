@@ -1,11 +1,34 @@
 {
   "name": "lark-a2ui-renderer",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Render a constrained A2UI v0.8 subset into Feishu/Lark interactive card JSON.",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.15.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielwpz/lark-a2ui-renderer.git"
+  },
+  "homepage": "https://github.com/danielwpz/lark-a2ui-renderer#readme",
+  "bugs": {
+    "url": "https://github.com/danielwpz/lark-a2ui-renderer/issues"
+  },
+  "keywords": [
+    "a2ui",
+    "lark",
+    "feishu",
+    "interactive-card",
+    "renderer"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "docs",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
