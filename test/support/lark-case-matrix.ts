@@ -661,6 +661,7 @@ function multipleChoice(
   path: string,
   options: { options: string[]; variant?: string; required?: boolean },
 ): A2uiComponentNode {
+  const multiSelect = options.variant === "checkbox" || options.variant === "chips";
   return {
     id,
     component: {
@@ -672,7 +673,7 @@ function multipleChoice(
           label: { literalString: value[0]?.toUpperCase() + value.slice(1) },
           value,
         })),
-        maxAllowedSelections: 1,
+        maxAllowedSelections: multiSelect ? options.options.length : 1,
         variant: options.variant ?? "select",
         ...(options.required === true ? { required: true } : {}),
       },

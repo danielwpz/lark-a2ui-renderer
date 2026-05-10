@@ -217,8 +217,9 @@ function renderTextField(context, props) {
 }
 function renderMultipleChoice(context, props) {
     const options = Array.isArray(props.options) ? props.options : [];
+    const multiSelect = shouldRenderMultipleChoiceAsMultiSelect(props);
     return {
-        tag: "select_static",
+        tag: multiSelect ? "multi_select_static" : "select_static",
         name: readRequiredString(props.name, "MultipleChoice.name"),
         placeholder: {
             tag: "plain_text",
@@ -233,6 +234,16 @@ function renderMultipleChoice(context, props) {
         })),
         required: props.required === true,
     };
+}
+function shouldRenderMultipleChoiceAsMultiSelect(props) {
+    const variant = readStringStyle(props.variant);
+    if (variant === "checkbox" || variant === "chips") {
+        return true;
+    }
+    if (variant === "radio" || variant === "select") {
+        return false;
+    }
+    return typeof props.maxAllowedSelections === "number" && props.maxAllowedSelections > 1;
 }
 function renderDateTimeInput(context, props) {
     return {
