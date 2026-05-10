@@ -398,6 +398,15 @@ function validateComponentProps(
       if (!Array.isArray(props.options) || props.options.length === 0) {
         addError(issues, `${path}.options`, "MultipleChoice.options must be a non-empty array");
       }
+      if (props.maxAllowedSelections !== undefined) {
+        validatePositiveInteger(props.maxAllowedSelections, `${path}.maxAllowedSelections`, issues);
+      }
+      validateOptionalStringEnum(props.variant, `${path}.variant`, issues, [
+        "checkbox",
+        "chips",
+        "radio",
+        "select",
+      ]);
       return;
     case "DateTimeInput":
       if (readString(props.name) == null) {
@@ -567,6 +576,20 @@ function validateBoundString(value: unknown, path: string, issues: ValidationIss
   const hasPath = typeof value.path === "string";
   if (!hasLiteral && !hasPath) {
     addError(issues, path, "Use literalString for fixed text or path for data-model text");
+  }
+}
+
+function validateOptionalStringEnum(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  allowed: readonly string[],
+): void {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    addError(issues, path, `Value must be one of: ${allowed.join(", ")}`);
   }
 }
 

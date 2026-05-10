@@ -43,6 +43,103 @@ describe("semantic fixtures", () => {
     assert.deepEqual(rendered.callbackBindings[0]?.envelope, callbackInput.envelope);
     assert.deepEqual(normalizeCallback(surface, callbackInput), expected);
   });
+
+  test("renders MultipleChoice as multi-select when multiple selections are allowed", () => {
+    const store = new SurfaceStore();
+    store.applyMessages([
+      {
+        surfaceUpdate: {
+          surfaceId: "multi_choice",
+          components: [
+            {
+              id: "root",
+              component: {
+                Column: {
+                  children: { explicitList: ["tags"] },
+                },
+              },
+            },
+            {
+              id: "tags",
+              component: {
+                MultipleChoice: {
+                  name: "tags",
+                  label: { literalString: "Tags" },
+                  selections: { path: "/form/tags" },
+                  options: [
+                    { label: { literalString: "A" }, value: "a" },
+                    { label: { literalString: "B" }, value: "b" },
+                  ],
+                  maxAllowedSelections: 2,
+                  variant: "checkbox",
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        beginRendering: {
+          surfaceId: "multi_choice",
+          catalogId: "urn:a2ui:catalog:lark-card:v0_8",
+          root: "root",
+        },
+      },
+    ]);
+
+    const rendered = renderSurface(store.getSurface("multi_choice"));
+
+    assert.match(JSON.stringify(rendered.card), /"tag":"multi_select_static"/);
+  });
+
+  test("keeps radio MultipleChoice as single-select even with a higher max selection hint", () => {
+    const store = new SurfaceStore();
+    store.applyMessages([
+      {
+        surfaceUpdate: {
+          surfaceId: "radio_choice",
+          components: [
+            {
+              id: "root",
+              component: {
+                Column: {
+                  children: { explicitList: ["priority"] },
+                },
+              },
+            },
+            {
+              id: "priority",
+              component: {
+                MultipleChoice: {
+                  name: "priority",
+                  label: { literalString: "Priority" },
+                  selections: { path: "/form/priority" },
+                  options: [
+                    { label: { literalString: "Normal" }, value: "normal" },
+                    { label: { literalString: "High" }, value: "high" },
+                  ],
+                  maxAllowedSelections: 2,
+                  variant: "radio",
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        beginRendering: {
+          surfaceId: "radio_choice",
+          catalogId: "urn:a2ui:catalog:lark-card:v0_8",
+          root: "root",
+        },
+      },
+    ]);
+
+    const rendered = renderSurface(store.getSurface("radio_choice"));
+
+    assert.match(JSON.stringify(rendered.card), /"tag":"select_static"/);
+    assert.doesNotMatch(JSON.stringify(rendered.card), /"tag":"multi_select_static"/);
+  });
 });
 
 function loadFixture(name: string): {

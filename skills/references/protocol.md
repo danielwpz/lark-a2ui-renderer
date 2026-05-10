@@ -227,8 +227,11 @@ input types.
 }
 ```
 
-The current renderer maps this to a Lark static select. Store selections as an
-array in the data model.
+Store selections as an array in the data model. Use `maxAllowedSelections: 1`
+and `variant: "select"` for single-select; `variant: "radio"` is accepted as a
+single-select alias. For multi-select, set `maxAllowedSelections` greater than 1
+and use `variant: "checkbox"` or `variant: "chips"`; the renderer maps this to
+Lark `multi_select_static`.
 
 ### DateTimeInput
 
