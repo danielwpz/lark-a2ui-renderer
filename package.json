@@ -1,6 +1,6 @@
 {
   "name": "lark-a2ui-renderer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render a constrained A2UI v0.8 subset into Feishu/Lark interactive card JSON.",
   "license": "MIT",
   "type": "module",
