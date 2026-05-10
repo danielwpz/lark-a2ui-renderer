@@ -237,9 +237,9 @@ function buildAppendLogScript(): string {
     'const now = new Intl.DateTimeFormat("en-US", { hour12: false, timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date());',
     'const previous = fs.existsSync(path) ? fs.readFileSync(path, "utf8").split(/\\r?\\n/).filter(Boolean) : [];',
     "const next = previous.length + 1;",
-    "const lines = [...previous, `update ${next} at ${now}`];",
-    'fs.writeFileSync(path, `${lines.join("\\n")}\\n`);',
-    'console.log(JSON.stringify({ status: "healthy", latencyMs: 40 + next, updatedAt: `last update at ${now}`, log: lines.slice(-8).join("\\n") }));',
+    'const lines = [...previous, "update " + next + " at " + now];',
+    'fs.writeFileSync(path, lines.join("\\n") + "\\n");',
+    'console.log(JSON.stringify({ status: "healthy", latencyMs: 40 + next, updatedAt: "last update at " + now, log: lines.slice(-8).join("\\n") }));',
   ].join("\n");
   return `node -e ${shellQuote(js)}`;
 }
