@@ -4,6 +4,7 @@ import { describe, test } from "vitest";
 import {
   DYNAMIC_DATA_EXTENSION_ID,
   DynamicDataRuntime,
+  LARK_CARD_CATALOG_ID,
   LARK_CARD_LIVE_CATALOG_ID,
   renderSurface,
   SurfaceStore,
@@ -162,6 +163,319 @@ describe("dynamic data source extension", () => {
     assert.equal(firstRow.background_style, "default");
     assert.equal(typeof readRecord(header.title).content, "string");
     assert.ok(config.style != null);
+  });
+
+  test("renders full-width dashboard boxes inside weighted rows", () => {
+    const messages: A2uiRuntimeMessage[] = [
+      {
+        surfaceUpdate: {
+          surfaceId: "dashboard_surface",
+          components: [
+            {
+              id: "root",
+              component: {
+                Column: {
+                  gap: 12,
+                  children: {
+                    explicitList: ["header", "stats"],
+                  },
+                },
+              },
+            },
+            {
+              id: "header",
+              component: {
+                Box: {
+                  backgroundColor: "#0B57D0",
+                  padding: 14,
+                  borderRadius: 12,
+                  children: {
+                    explicitList: ["header_text"],
+                  },
+                },
+              },
+            },
+            {
+              id: "header_text",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "# GitHub Dashboard",
+                  },
+                },
+              },
+            },
+            {
+              id: "stats",
+              component: {
+                Row: {
+                  gap: 12,
+                  children: {
+                    explicitList: ["issues_card", "prs_card"],
+                  },
+                },
+              },
+            },
+            {
+              id: "issues_card",
+              component: {
+                Box: {
+                  backgroundColor: "#EAF2FF",
+                  padding: 16,
+                  children: {
+                    explicitList: ["issues_title", "issues_count"],
+                  },
+                },
+              },
+            },
+            {
+              id: "prs_card",
+              component: {
+                Box: {
+                  backgroundColor: "#FFF3E4",
+                  padding: 16,
+                  children: {
+                    explicitList: ["prs_title", "prs_count"],
+                  },
+                },
+              },
+            },
+            {
+              id: "issues_title",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "### Open Issues",
+                  },
+                },
+              },
+            },
+            {
+              id: "issues_count",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "# 128",
+                  },
+                },
+              },
+            },
+            {
+              id: "prs_title",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "### Open PRs",
+                  },
+                },
+              },
+            },
+            {
+              id: "prs_count",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "# 17",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        beginRendering: {
+          surfaceId: "dashboard_surface",
+          catalogId: LARK_CARD_CATALOG_ID,
+          root: "root",
+        },
+      },
+    ];
+    const validation = validateA2uiMessages(messages);
+    assert.deepEqual(validation.issues, []);
+
+    const store = new SurfaceStore();
+    store.applyMessages(messages.filter(isCoreServerMessage));
+    const rendered = renderSurface(store.getSurface("dashboard_surface"));
+    const body = readRecord(rendered.card.body);
+    const elements = readArray(body.elements);
+    const rootColumnSet = readRecord(elements[0]);
+    const rootColumn = readRecord(readArray(rootColumnSet.columns)[0]);
+    const rootElements = readArray(rootColumn.elements);
+    const headerBox = readRecord(rootElements[0]);
+    const headerBoxColumn = readRecord(readArray(headerBox.columns)[0]);
+    const statsRow = readRecord(rootElements[1]);
+    const statColumns = readArray(statsRow.columns);
+    const issuesColumn = readRecord(statColumns[0]);
+    const prsColumn = readRecord(statColumns[1]);
+    const issuesBox = readRecord(readArray(issuesColumn.elements)[0]);
+    const issuesBoxColumn = readRecord(readArray(issuesBox.columns)[0]);
+    const prsBox = readRecord(readArray(prsColumn.elements)[0]);
+    const prsBoxColumn = readRecord(readArray(prsBox.columns)[0]);
+    const config = readRecord(rendered.card.config);
+    const style = readRecord(readRecord(config.style).color);
+
+    assert.equal(rootColumn.vertical_spacing, "12px");
+    assert.equal(statsRow.horizontal_spacing, "12px");
+    assert.equal(issuesColumn.width, "weighted");
+    assert.equal(prsColumn.width, "weighted");
+    assert.equal(issuesColumn.weight, 1);
+    assert.equal(prsColumn.weight, 1);
+    assert.equal(headerBoxColumn.padding, "14px");
+    assert.equal(issuesBoxColumn.padding, "16px");
+    assert.equal(prsBoxColumn.padding, "16px");
+    assert.notEqual(headerBoxColumn.background_style, "default");
+    assert.notEqual(issuesBoxColumn.background_style, "default");
+    assert.notEqual(prsBoxColumn.background_style, "default");
+    assert.equal(Object.keys(style).length, 3);
+  });
+
+  test("keeps form surfaces flat when Column.gap is set", () => {
+    const messages: A2uiRuntimeMessage[] = [
+      {
+        dataModelUpdate: {
+          surfaceId: "choice_form_surface",
+          path: "/",
+          contents: [
+            {
+              key: "form",
+              valueMap: [
+                {
+                  key: "answer",
+                  valueMap: [{ key: "0", valueString: "a" }],
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        surfaceUpdate: {
+          surfaceId: "choice_form_surface",
+          components: [
+            {
+              id: "root",
+              component: {
+                Column: {
+                  gap: 12,
+                  children: {
+                    explicitList: ["title", "form"],
+                  },
+                },
+              },
+            },
+            {
+              id: "title",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "SBTI choice form",
+                  },
+                },
+              },
+            },
+            {
+              id: "form",
+              component: {
+                Form: {
+                  children: {
+                    explicitList: ["question", "answer"],
+                  },
+                  submit: "submit",
+                },
+              },
+            },
+            {
+              id: "question",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "Choose one answer.",
+                  },
+                },
+              },
+            },
+            {
+              id: "answer",
+              component: {
+                MultipleChoice: {
+                  name: "answer",
+                  label: {
+                    literalString: "Answer",
+                  },
+                  selections: {
+                    path: "/form/answer",
+                  },
+                  options: [
+                    {
+                      label: {
+                        literalString: "A",
+                      },
+                      value: "a",
+                    },
+                    {
+                      label: {
+                        literalString: "B",
+                      },
+                      value: "b",
+                    },
+                  ],
+                  maxAllowedSelections: 1,
+                  variant: "select",
+                  required: true,
+                },
+              },
+            },
+            {
+              id: "submit_label",
+              component: {
+                Text: {
+                  text: {
+                    literalString: "Submit",
+                  },
+                },
+              },
+            },
+            {
+              id: "submit",
+              component: {
+                Button: {
+                  child: "submit_label",
+                  primary: true,
+                  action: {
+                    name: "submit_choice",
+                    context: [],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        beginRendering: {
+          surfaceId: "choice_form_surface",
+          catalogId: LARK_CARD_CATALOG_ID,
+          root: "root",
+        },
+      },
+    ];
+    const validation = validateA2uiMessages(messages);
+    assert.deepEqual(validation.issues, []);
+
+    const store = new SurfaceStore();
+    store.applyMessages(messages.filter(isCoreServerMessage));
+    const rendered = renderSurface(store.getSurface("choice_form_surface"));
+    const body = readRecord(rendered.card.body);
+    const elements = readArray(body.elements);
+    const formElement = readRecord(elements[1]);
+    const formElements = readArray(formElement.elements);
+
+    assert.equal(readRecord(elements[0]).tag, "markdown");
+    assert.equal(formElement.tag, "form");
+    assert.equal(readRecord(formElements[0]).tag, "markdown");
+    assert.equal(readRecord(formElements[1]).tag, "select_static");
+    assert.equal(readRecord(formElements[2]).tag, "button");
   });
 
   test("renders empty pixel Grid cells at the known Lark-visible minimum size", () => {

@@ -53,6 +53,11 @@
           "type": "string",
           "description": "Horizontal alignment hint.",
           "enum": ["center", "end", "start", "stretch"]
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Vertical spacing between child elements, in pixels."
         }
       },
       "required": ["children"]
@@ -84,6 +89,46 @@
           "type": "string",
           "description": "Vertical alignment hint.",
           "enum": ["start", "center", "end", "stretch"]
+        },
+        "gap": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Horizontal spacing between child columns, in pixels."
+        }
+      },
+      "required": ["children"]
+    },
+    "Box": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "type": "object",
+          "description": "Static list of child component ids.",
+          "additionalProperties": false,
+          "properties": {
+            "explicitList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["explicitList"]
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "CSS color used as the container background."
+        },
+        "padding": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Inner padding in pixels."
+        },
+        "borderRadius": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Advisory corner radius in pixels. Lark rendering may ignore it."
         }
       },
       "required": ["children"]

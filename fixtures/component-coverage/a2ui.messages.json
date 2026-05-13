@@ -48,14 +48,26 @@
             "Column": {
               "children": {
                 "explicitList": [
-                  "title",
-                  "description",
+                  "header_box",
                   "section_divider",
                   "review_form",
                   "actions_divider",
                   "secondary_actions"
                 ]
               }
+            }
+          }
+        },
+        {
+          "id": "header_box",
+          "component": {
+            "Box": {
+              "children": {
+                "explicitList": ["title", "description"]
+              },
+              "backgroundColor": "#EAF2FF",
+              "padding": 12,
+              "borderRadius": 12
             }
           }
         },

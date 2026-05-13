@@ -49,7 +49,7 @@ const scenarios: LlmScenario[] = [
   {
     name: "complete component coverage review form",
     prompt:
-      "Generate one complex review card that intentionally uses every supported component: Text, Column, Row, Divider, Button, Form, TextField, MultipleChoice, and DateTimeInput. The card should review a deployment request. It must include a data model with a ticket id and form fields, title/body text, at least one divider, a form with a required long-text reason field, a single-select priority field with normal/high/urgent options, a required target date field, a primary submit button whose action context includes all submitted form values via data-model paths, and a secondary row with Cancel and Escalate buttons with useful action contexts.",
+      "Generate one complex review card that intentionally uses every supported component: Text, Column, Row, Box, Divider, Button, Form, TextField, MultipleChoice, and DateTimeInput. The card should review a deployment request. It must include a data model with a ticket id and form fields, title/body text inside a Box with backgroundColor and padding, at least one divider, a form with a required long-text reason field, a single-select priority field with normal/high/urgent options, a required target date field, a primary submit button whose action context includes all submitted form values via data-model paths, and a secondary row with Cancel and Escalate buttons with useful action contexts.",
     requiredComponents: [...LARK_CARD_COMPONENT_TYPES],
     expectedMinimumBindings: 3,
     requiresFormCallback: true,

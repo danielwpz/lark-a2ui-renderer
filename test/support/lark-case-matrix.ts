@@ -446,7 +446,8 @@ function buildComplexCase(input: (typeof complexCases)[number]): LarkMatrixCase 
   const surfaceId = `matrix_${input}`;
   const title = input.replace(/_/g, " ");
   const components: A2uiComponentNode[] = [
-    column("root", ["title", "body", "divider_1", "review_form", "divider_2", "actions"]),
+    column("root", ["header_box", "body", "divider_1", "review_form", "divider_2", "actions"]),
+    box("header_box", ["title"]),
     text("title", title),
     text("body", "Complete the required fields and choose an action."),
     divider("divider_1"),
@@ -509,6 +510,7 @@ function buildComplexCase(input: (typeof complexCases)[number]): LarkMatrixCase 
         "Text",
         "Column",
         "Row",
+        "Box",
         "Divider",
         "Button",
         "Form",
@@ -570,6 +572,19 @@ function column(id: string, children: string[]): A2uiComponentNode {
 
 function row(id: string, children: string[], distribution = "end"): A2uiComponentNode {
   return { id, component: { Row: { children: { explicitList: children }, distribution } } };
+}
+
+function box(id: string, children: string[]): A2uiComponentNode {
+  return {
+    id,
+    component: {
+      Box: {
+        children: { explicitList: children },
+        backgroundColor: "#EAF2FF",
+        padding: 12,
+      },
+    },
+  };
 }
 
 function text(

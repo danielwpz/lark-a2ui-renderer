@@ -88,9 +88,11 @@ function renderNodeAsElements(
     case "Text":
       return [renderText(context, component.props)];
     case "Column":
-      return renderChildren(context, readExplicitChildren(component.props.children));
+      return renderColumn(context, component.id, component.props);
     case "Row":
-      return [renderRow(context, component.props)];
+      return renderRow(context, component.props);
+    case "Box":
+      return renderBox(context, component.id, component.props);
     case "Divider":
       return [{ tag: "hr" }];
     case "Button":
@@ -199,22 +201,138 @@ function renderText(
   };
 }
 
+function renderColumn(
+  context: RenderContext,
+  componentId: string,
+  props: Record<string, unknown>,
+): Record<string, unknown>[] {
+  const childIds = readExplicitChildren(props.children);
+  if (props.gap === undefined || containsLarkFormElement(context, childIds)) {
+    return renderChildren(context, childIds);
+  }
+  const gap = readNonNegativeInteger(props.gap, "Column.gap", 0);
+  return [
+    {
+      tag: "column_set",
+      element_id: componentId,
+      flex_mode: "none",
+      horizontal_spacing: "0px",
+      horizontal_align: "left",
+      margin: "0px",
+      background_style: "default",
+      columns: [
+        {
+          tag: "column",
+          element_id: `${componentId}_column`,
+          width: "weighted",
+          weight: 1,
+          vertical_align: "top",
+          vertical_spacing: `${gap}px`,
+          padding: "0px",
+          background_style: "default",
+          elements: renderChildren(context, childIds),
+        },
+      ],
+    },
+  ];
+}
+
 function renderRow(
   context: RenderContext,
   props: Record<string, unknown>,
-): Record<string, unknown> {
+): Record<string, unknown>[] {
   const childIds = readExplicitChildren(props.children);
-  return {
-    tag: "column_set",
-    flex_mode: "none",
-    horizontal_align: mapHorizontalAlign(props.distribution),
-    columns: childIds.map((childId) => ({
-      tag: "column",
-      width: "weighted",
-      weight: 1,
-      elements: renderNodeAsElements(context, childId),
-    })),
-  };
+  if (containsLarkFormElement(context, childIds)) {
+    return renderChildren(context, childIds);
+  }
+  const gap = props.gap === undefined ? null : readNonNegativeInteger(props.gap, "Row.gap", 0);
+  return [
+    {
+      tag: "column_set",
+      flex_mode: "none",
+      horizontal_align: mapHorizontalAlign(props.distribution),
+      ...(gap == null ? {} : { horizontal_spacing: `${gap}px` }),
+      columns: childIds.map((childId) => ({
+        tag: "column",
+        width: "weighted",
+        weight: 1,
+        elements: renderNodeAsElements(context, childId),
+      })),
+    },
+  ];
+}
+
+function renderBox(
+  context: RenderContext,
+  componentId: string,
+  props: Record<string, unknown>,
+): Record<string, unknown>[] {
+  const childIds = readExplicitChildren(props.children);
+  if (containsLarkFormElement(context, childIds)) {
+    return renderChildren(context, childIds);
+  }
+  const backgroundColor = readStringStyle(props.backgroundColor);
+  const padding = readNonNegativeInteger(props.padding, "Box.padding", 0);
+  return [
+    {
+      tag: "column_set",
+      element_id: componentId,
+      flex_mode: "none",
+      horizontal_spacing: "0px",
+      horizontal_align: "left",
+      margin: "0px",
+      background_style: "default",
+      columns: [
+        {
+          tag: "column",
+          element_id: `${componentId}_box`,
+          width: "weighted",
+          weight: 1,
+          vertical_align: "top",
+          vertical_spacing: "0px",
+          padding: `${padding}px`,
+          background_style:
+            backgroundColor == null ? "default" : registerColorStyle(context, backgroundColor),
+          elements: renderChildren(context, childIds),
+        },
+      ],
+    },
+  ];
+}
+
+function containsLarkFormElement(context: RenderContext, componentIds: string[]): boolean {
+  return componentIds.some((componentId) => containsLarkFormElementNode(context, componentId));
+}
+
+function containsLarkFormElementNode(
+  context: RenderContext,
+  componentId: string,
+  seen = new Set<string>(),
+): boolean {
+  if (seen.has(componentId)) {
+    return false;
+  }
+  seen.add(componentId);
+  const component = readComponentRef(context.surface, componentId);
+  if (
+    component.type === "Form" ||
+    component.type === "TextField" ||
+    component.type === "MultipleChoice" ||
+    component.type === "DateTimeInput"
+  ) {
+    return true;
+  }
+  if (
+    component.type !== "Column" &&
+    component.type !== "Row" &&
+    component.type !== "Box" &&
+    component.type !== "Grid"
+  ) {
+    return false;
+  }
+  return readOptionalExplicitChildren(component.props.children).some((childId) =>
+    containsLarkFormElementNode(context, childId, seen),
+  );
 }
 
 function renderForm(
